@@ -3,12 +3,29 @@
 #include <SPI.h>
 #include <SD.h>
 #include <SerialFlash.h>
+#include <ILI9341_t3.h>
+#include <font_Arial.h>
+#include <XPT2046_Touchscreen.h>
+#include <SPI.h>
+#include "Utils.h"
+
+#define CS_PIN  31
+#define TIRQ_PIN  35
+#define TFT_DC      20
+#define TFT_CS      21
+#define TFT_RST    255  // 255 = unused, connect to 3.3V
+#define TFT_MOSI     7
+#define TFT_SCLK    14
+#define TFT_MISO    12
 
 #define FLANGE_DELAY_LENGTH (4*AUDIO_BLOCK_SAMPLES)
 #define CHORUS_DELAY_LENGTH (16*AUDIO_BLOCK_SAMPLES)
 
 short flangerDelayLine[FLANGE_DELAY_LENGTH];
 short chorusDelayLine[CHORUS_DELAY_LENGTH];
+
+ILI9341_t3 tft = ILI9341_t3(TFT_CS, TFT_DC, TFT_RST, TFT_MOSI, TFT_SCLK, TFT_MISO);
+XPT2046_Touchscreen ts(CS_PIN, TIRQ_PIN);  // Param 2 - Touch IRQ Pin - interrupt enabled polling
 
 AudioInputI2S            in_I2S;           //xy=86.03125762939453,167.03125
 AudioEffectBitcrusher    fx_BitCrush;    //xy=314,163
@@ -60,7 +77,13 @@ static uint32_t next;
 void setup()
 {
 	Serial.begin(115200);
-   
+
+  tft.begin();
+  tft.setRotation(1);
+  tft.fillScreen(ILI9341_BLACK);
+  ts.begin();
+  ts.setRotation(1);
+  
 	AudioMemory(120);
 	next = millis() + 1000;
 	AudioNoInterrupts();
@@ -91,16 +114,15 @@ void setup()
     sequencer.begin(120, 16);
     sequencer.setStepHandler(sequencer_stepHandler);
 	AudioInterrupts();
+
+  printWelcomeBanner();
 }
 
 void sequencer_stepHandler(int current, int previous)
 {
-    if (current % 2 == 0)
-    {
-    }
-    else
-    {
-    }
+    tft.fillRect(0,0, 320, 12, ILI9341_BLACK);
+    tft.setCursor(0, 0);
+    tft.print(current);
 }
 
 void loop()
@@ -111,11 +133,7 @@ void loop()
     if(millis() == next)
     {
         next = millis() + 1000;
-        Serial.print("cpu:");
-        Serial.print(AudioProcessorUsageMax());
-        Serial.print(" memory:");
-        Serial.println(AudioMemoryUsageMax());
-        AudioProcessorUsageMaxReset();
+        updateStatusData();
     }
 
     sequencer.run();
