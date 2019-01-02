@@ -4,7 +4,6 @@
 #include <SD.h>
 #include <SerialFlash.h>
 #include <ILI9341_t3.h>
-#include <font_Arial.h>
 #include <XPT2046_Touchscreen.h>
 #include <SPI.h>
 #include "Utils.h"
@@ -34,12 +33,17 @@ AudioEffectFlange        fx_Flange;
 AudioEffectChorus        fx_Chorus;
 AudioFilterStateVariable fx_Filter;
 AudioEffectDelay         fx_Delay;
+AudioEffectGranular      fx_Granular;
+AudioEffectWaveshaper    fx_Waveshaper;
+AudioEffectEnvelope      fx_Envelope;
 AudioMixer4              mix_Delay;
 AudioOutputI2S           out_I2S;           //xy=556.0000190734863,172.99999856948853
 AudioControlSGTL5000     sgtl5000_1;     //xy=317.00001525878906,328.00000286102295
 
 #include "AudioMux.h"
 #include "FifteenStep.h"
+#include "Terminus.h"
+#include "60Sekuntia.h"
 
 AudioMux mux_Main;
 AudioConnection mux_BitCrush1(fx_BitCrush, 0, mux_Main, 1);
@@ -79,10 +83,11 @@ void setup()
 	Serial.begin(115200);
 
   tft.begin();
-  tft.setRotation(1);
+  tft.setRotation(3);
   tft.fillScreen(ILI9341_BLACK);
+  tft.setFont(Terminus);
   ts.begin();
-  ts.setRotation(1);
+  ts.setRotation(3);
   
 	AudioMemory(120);
 	next = millis() + 1000;
@@ -120,9 +125,8 @@ void setup()
 
 void sequencer_stepHandler(int current, int previous)
 {
-    tft.fillRect(0,0, 320, 12, ILI9341_BLACK);
-    tft.setCursor(0, 0);
-    tft.print(current);
+    tft.fillRect(previous*20, 11, 20, 3, ILI9341_BLACK);
+    tft.fillRect(current*20, 11, 20, 3, ILI9341_WHITE);
 }
 
 void loop()
@@ -132,7 +136,7 @@ void loop()
     // mux_Main.setConnection(7, 0, true);
     if(millis() == next)
     {
-        next = millis() + 1000;
+        next = millis() + (1000/24);
         updateStatusData();
     }
 
