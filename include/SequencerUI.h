@@ -20,17 +20,8 @@ class SequencerUI
 			uint16_t _width = 320,
 			uint16_t _height = 16,
 			uint8_t _steps = 16,
-			uint16_t _stepBaseColor = 0xF800,
-			const unsigned int *_sampleData = NULL) 
-		: g(_g), x(_x), y(_y), width(_width), height(_height), steps(_steps),
-			stepBaseColor(_stepBaseColor),
-			currentStep(0), previousStep(0), sampleData(_sampleData), invalid(false)
-		{
-			stepWidth = width / steps;
-			dead = false;
-		}
+			uint16_t _stepBaseColor = 0xF800);
 
-		void loadSample();
 		void repaint();
 		bool isValid() { return (!invalid); }
 		void handleStepEvent(int _currentStep, int _previousStep);
@@ -54,8 +45,14 @@ class SequencerUI
 			core.setSteps(steps);
 			stepWidth = width / steps;
 		}
-
-		AudioPlayMemory wavPlayer;
+		AudioMixer4 output;
+		AudioSynthWaveform waveform;
+		AudioSynthNoiseWhite noiseWhite;
+		AudioSynthNoisePink noisePink;
+		AudioEffectEnvelope envelopePitch;
+		AudioConnection waveformMix = AudioConnection(waveform, 0, output, 0);
+		AudioConnection whiteMix = AudioConnection(noiseWhite, 0, output, 1);
+		AudioConnection pinkMix = AudioConnection(noisePink, 0, output, 2);
 
 	private:
 		ILI9341_t3 &g;
@@ -64,7 +61,6 @@ class SequencerUI
 		uint8_t steps;
 		uint16_t stepBaseColor;
 		uint16_t currentStep, previousStep;
-		const unsigned int *sampleData;
 		bool invalid;
 		bool dead;
 };
